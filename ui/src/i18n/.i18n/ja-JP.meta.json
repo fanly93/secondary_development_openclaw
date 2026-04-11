@@ -5,6 +5,9 @@
     "agentTools.channelSource",
     "agentTools.connected",
     "agentTools.connectedSource",
+    "channels.feishu.subtitle",
+    "channels.feishu.title",
+    "channels.feishu.webhookPort",
     "channels.gatewayUrlConfirmation.subtitle",
     "channels.gatewayUrlConfirmation.title",
     "channels.gatewayUrlConfirmation.warning",
@@ -213,12 +216,12 @@
     "usage.filters.timeZoneUtc",
     "usage.overview.tokensPerMinute"
   ],
-  "generatedAt": "2026-04-10T15:32:20.401Z",
+  "generatedAt": "2026-04-11T02:33:30.058Z",
   "locale": "ja-JP",
   "model": "",
   "provider": "",
-  "sourceHash": "57db8156e6bad44580f2b5ebc068aa88f25c29fda9eab69454117ec739c2af1d",
-  "totalKeys": 679,
+  "sourceHash": "4ae5301035d8e87cb8dac372643b50b1712e1a61dd5b5d4c03106dc9cb68d604",
+  "totalKeys": 682,
   "translatedKeys": 467,
   "workflow": 1
 }

@@ -124,6 +124,28 @@ export type TelegramStatus = {
   lastProbeAt?: number | null;
 };
 
+/** Aggregated Feishu/Lark channel row from gateway `channels.status` (shape follows probe-style summaries). */
+export type FeishuProbe = {
+  ok: boolean;
+  status?: number | null;
+  error?: string | null;
+  elapsedMs?: number | null;
+  appId?: string | null;
+  botName?: string | null;
+  botOpenId?: string | null;
+};
+
+export type FeishuStatus = {
+  configured?: boolean;
+  running?: boolean;
+  lastStartAt?: number | null;
+  lastStopAt?: number | null;
+  lastError?: string | null;
+  probe?: FeishuProbe | null;
+  lastProbeAt?: number | null;
+  port?: number | null;
+};
+
 export type DiscordBot = {
   id?: string | null;
   username?: string | null;

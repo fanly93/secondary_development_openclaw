@@ -73,6 +73,11 @@ export const pt_BR: TranslationMap = {
     generic: {
       subtitle: "Channel status and configuration.",
     },
+    feishu: {
+      title: "Feishu / Lark",
+      subtitle: "Bot app credentials, webhook or socket mode, and Feishu channel settings.",
+      webhookPort: "Webhook port",
+    },
     gatewayUrlConfirmation: {
       title: "Change Gateway URL",
       subtitle: "This will reconnect to a different gateway server",

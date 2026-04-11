@@ -6,6 +6,7 @@ import type {
   ChannelUiMetaEntry,
   ChannelsStatusSnapshot,
   DiscordStatus,
+  FeishuStatus,
   GoogleChatStatus,
   IMessageStatus,
   NostrProfile,
@@ -17,6 +18,7 @@ import type {
 } from "../types.ts";
 import { renderChannelConfigSection } from "./channels.config.ts";
 import { renderDiscordCard } from "./channels.discord.ts";
+import { renderFeishuCard } from "./channels.feishu.ts";
 import { renderGoogleChatCard } from "./channels.googlechat.ts";
 import { renderIMessageCard } from "./channels.imessage.ts";
 import { renderNostrCard } from "./channels.nostr.ts";
@@ -32,10 +34,77 @@ import { renderTelegramCard } from "./channels.telegram.ts";
 import type { ChannelKey, ChannelsChannelData, ChannelsProps } from "./channels.types.ts";
 import { renderWhatsAppCard } from "./channels.whatsapp.ts";
 
+/** Control UI Channels tab: only surface these integrations (see product channel picker). */
+const CONTROL_UI_CHANNEL_PAGE_ORDER = ["whatsapp", "telegram", "feishu"] as const;
+
+function pickRecordKeys<T extends Record<string, unknown>>(
+  source: T | null | undefined,
+  keys: readonly string[],
+): Record<string, unknown> {
+  if (!source) {
+    return {};
+  }
+  const out: Record<string, unknown> = {};
+  for (const key of keys) {
+    if (key in source) {
+      out[key] = source[key];
+    }
+  }
+  return out;
+}
+
+/** Narrow gateway snapshot for this page so hidden channels do not appear in the health JSON. */
+function pickControlUiChannelsSnapshot(snapshot: ChannelsStatusSnapshot): ChannelsStatusSnapshot {
+  const keys = CONTROL_UI_CHANNEL_PAGE_ORDER as readonly string[];
+  const channelLabels = pickRecordKeys(
+    snapshot.channelLabels,
+    keys,
+  ) as ChannelsStatusSnapshot["channelLabels"];
+  const detailRaw = snapshot.channelDetailLabels;
+  const channelDetailLabels =
+    detailRaw && typeof detailRaw === "object"
+      ? (pickRecordKeys(detailRaw as Record<string, unknown>, keys) as NonNullable<
+          ChannelsStatusSnapshot["channelDetailLabels"]
+        >)
+      : undefined;
+  const imagesRaw = snapshot.channelSystemImages;
+  const channelSystemImages =
+    imagesRaw && typeof imagesRaw === "object"
+      ? (pickRecordKeys(imagesRaw as Record<string, unknown>, keys) as NonNullable<
+          ChannelsStatusSnapshot["channelSystemImages"]
+        >)
+      : undefined;
+  const channelMeta = snapshot.channelMeta?.filter((entry) =>
+    (CONTROL_UI_CHANNEL_PAGE_ORDER as readonly string[]).includes(entry.id),
+  );
+  return {
+    ts: snapshot.ts,
+    channelOrder: [...CONTROL_UI_CHANNEL_PAGE_ORDER],
+    channelLabels,
+    ...(channelDetailLabels && Object.keys(channelDetailLabels).length > 0
+      ? { channelDetailLabels }
+      : {}),
+    ...(channelSystemImages && Object.keys(channelSystemImages).length > 0
+      ? { channelSystemImages }
+      : {}),
+    ...(channelMeta?.length ? { channelMeta } : {}),
+    channels: pickRecordKeys(snapshot.channels, keys),
+    channelAccounts: pickRecordKeys(
+      snapshot.channelAccounts as Record<string, unknown>,
+      keys,
+    ) as ChannelsStatusSnapshot["channelAccounts"],
+    channelDefaultAccountId: pickRecordKeys(
+      snapshot.channelDefaultAccountId as Record<string, unknown>,
+      keys,
+    ) as ChannelsStatusSnapshot["channelDefaultAccountId"],
+  };
+}
+
 export function renderChannels(props: ChannelsProps) {
   const channels = props.snapshot?.channels as Record<string, unknown> | null;
   const whatsapp = (channels?.whatsapp ?? undefined) as WhatsAppStatus | undefined;
   const telegram = (channels?.telegram ?? undefined) as TelegramStatus | undefined;
+  const feishu = (channels?.feishu ?? undefined) as FeishuStatus | undefined;
   const discord = (channels?.discord ?? null) as DiscordStatus | null;
   const googlechat = (channels?.googlechat ?? null) as GoogleChatStatus | null;
   const slack = (channels?.slack ?? null) as SlackStatus | null;
@@ -62,6 +131,7 @@ export function renderChannels(props: ChannelsProps) {
         renderChannel(channel.key, props, {
           whatsapp,
           telegram,
+          feishu,
           discord,
           googlechat,
           slack,
@@ -87,21 +157,17 @@ export function renderChannels(props: ChannelsProps) {
         ? html`<div class="callout danger" style="margin-top: 12px;">${props.lastError}</div>`
         : nothing}
       <pre class="code-block" style="margin-top: 12px;">
-${props.snapshot ? JSON.stringify(props.snapshot, null, 2) : t("channels.health.noSnapshotYet")}
+${props.snapshot
+          ? JSON.stringify(pickControlUiChannelsSnapshot(props.snapshot), null, 2)
+          : t("channels.health.noSnapshotYet")}
       </pre
       >
     </section>
   `;
 }
 
-function resolveChannelOrder(snapshot: ChannelsStatusSnapshot | null): ChannelKey[] {
-  if (snapshot?.channelMeta?.length) {
-    return snapshot.channelMeta.map((entry) => entry.id);
-  }
-  if (snapshot?.channelOrder?.length) {
-    return snapshot.channelOrder;
-  }
-  return ["whatsapp", "telegram", "discord", "googlechat", "slack", "signal", "imessage", "nostr"];
+function resolveChannelOrder(_snapshot: ChannelsStatusSnapshot | null): ChannelKey[] {
+  return [...CONTROL_UI_CHANNEL_PAGE_ORDER];
 }
 
 function renderChannel(key: ChannelKey, props: ChannelsProps, data: ChannelsChannelData) {
@@ -118,6 +184,13 @@ function renderChannel(key: ChannelKey, props: ChannelsProps, data: ChannelsChan
         props,
         telegram: data.telegram,
         telegramAccounts: data.channelAccounts?.telegram ?? [],
+        accountCountLabel,
+      });
+    case "feishu":
+      return renderFeishuCard({
+        props,
+        feishu: data.feishu,
+        feishuAccounts: data.channelAccounts?.feishu ?? [],
         accountCountLabel,
       });
     case "discord":
