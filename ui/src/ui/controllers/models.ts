@@ -16,3 +16,18 @@ export async function loadModels(client: GatewayBrowserClient): Promise<ModelCat
     return [];
   }
 }
+
+/** Models declared under `models.providers` in config (Models settings page). */
+export async function loadConfiguredModels(
+  client: GatewayBrowserClient,
+): Promise<ModelCatalogEntry[]> {
+  try {
+    const result = await client.request<{ models: ModelCatalogEntry[] }>(
+      "models.listConfigured",
+      {},
+    );
+    return result?.models ?? [];
+  } catch {
+    return [];
+  }
+}

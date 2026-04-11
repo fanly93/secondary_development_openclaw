@@ -153,6 +153,7 @@ export const pl: TranslationMap = {
     sessions: "Sesje",
     usage: "Użycie",
     cron: "Zadania Cron",
+    modelProviders: "Models",
     skills: "Skills",
     nodes: "Węzły",
     chat: "Czat",
@@ -174,6 +175,7 @@ export const pl: TranslationMap = {
     sessions: "Aktywne sesje i ustawienia domyślne.",
     usage: "Zużycie API i koszty.",
     cron: "Wybudzenia i cykliczne uruchomienia.",
+    modelProviders: "Custom providers and chat allowlist.",
     skills: "Skills i klucze API.",
     nodes: "Sparowane urządzenia i polecenia.",
     chat: "Czat Gateway do szybkich interwencji.",
@@ -186,6 +188,34 @@ export const pl: TranslationMap = {
     debug: "Migawki, zdarzenia, RPC.",
     logs: "Logi Gateway na żywo.",
     dreams: "Konsolidacja pamięci podczas snu.",
+  },
+  modelProviders: {
+    title: "Model providers",
+    subtitle:
+      "Add OpenAI-compatible endpoints (DeepSeek, DashScope, GLM, Kimi, …). Saved to openclaw.json and used for the gateway model catalog.",
+    allowlistHint:
+      "Saving syncs agents.defaults.models so the Chat tab model picker lists only models you configure here (plus fallbacks). Leave all providers empty to show the full catalog again.",
+    docsLink: "Configuration docs",
+    defaultModel: "Default agent model",
+    defaultModelHint:
+      "Written to agents.defaults.model as provider/model. When qwen3.5-plus is present it is preferred automatically if no default is set.",
+    noModelsYet: "Add a model under a provider first",
+    addProvider: "Add provider",
+    addModel: "Add model",
+    removeProvider: "Remove provider",
+    removeModel: "Remove model",
+    providerHeading: "Provider",
+    providerId: "Provider id",
+    providerIdHint: "Lowercase key stored under models.providers (e.g. dashscope, deepseek).",
+    apiAdapter: "API adapter",
+    apiKey: "API key",
+    apiKeyPlaceholder: "Paste API key",
+    apiKeyUnchangedPlaceholder: "Unchanged (leave blank to keep saved key)",
+    apiKeyRedactedHint:
+      "A key is already saved. Leave blank to keep it, or paste a new key to replace.",
+    models: "Models",
+    modelId: "Model id",
+    modelName: "Display name",
   },
   overview: {
     access: {
@@ -569,6 +599,9 @@ export const pl: TranslationMap = {
     showCronSessions: "Pokaż sesje Cron",
     showCronSessionsHidden: "Pokaż sesje Cron ({count} ukrytych)",
     onboardingDisabled: "Wyłączone podczas konfiguracji",
+    myModelsLabel: "Saved models (from Models settings)",
+    myModelsPlaceholder: "Saved models…",
+    myModelsEmpty: "No saved models — add them in Models",
   },
   languages: {
     en: "English",

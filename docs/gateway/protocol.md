@@ -240,6 +240,8 @@ implemented in `src/gateway/server-methods/*.ts`.
 ### Models and usage
 
 - `models.list` returns the runtime-allowed model catalog.
+- `models.listConfigured` returns models declared under `models.providers` in
+  config (the Models settings page), sorted by provider then model id.
 - `usage.status` returns provider usage windows/remaining quota summaries.
 - `usage.cost` returns aggregated cost usage summaries for a date range.
 - `doctor.memory.status` returns vector-memory / embedding readiness for the

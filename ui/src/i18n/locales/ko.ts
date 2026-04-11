@@ -153,6 +153,7 @@ export const ko: TranslationMap = {
     sessions: "세션",
     usage: "사용량",
     cron: "Cron 작업",
+    modelProviders: "Models",
     skills: "Skills",
     nodes: "노드",
     chat: "채팅",
@@ -174,6 +175,7 @@ export const ko: TranslationMap = {
     sessions: "활성 세션 및 기본값.",
     usage: "API 사용량 및 비용.",
     cron: "웨이크업 및 반복 실행.",
+    modelProviders: "Custom providers and chat allowlist.",
     skills: "Skills 및 API 키.",
     nodes: "페어링된 디바이스 및 명령.",
     chat: "빠른 개입을 위한 Gateway 채팅.",
@@ -186,6 +188,34 @@ export const ko: TranslationMap = {
     debug: "스냅샷, 이벤트, RPC.",
     logs: "실시간 Gateway 로그.",
     dreams: "수면 중 메모리 통합.",
+  },
+  modelProviders: {
+    title: "Model providers",
+    subtitle:
+      "Add OpenAI-compatible endpoints (DeepSeek, DashScope, GLM, Kimi, …). Saved to openclaw.json and used for the gateway model catalog.",
+    allowlistHint:
+      "Saving syncs agents.defaults.models so the Chat tab model picker lists only models you configure here (plus fallbacks). Leave all providers empty to show the full catalog again.",
+    docsLink: "Configuration docs",
+    defaultModel: "Default agent model",
+    defaultModelHint:
+      "Written to agents.defaults.model as provider/model. When qwen3.5-plus is present it is preferred automatically if no default is set.",
+    noModelsYet: "Add a model under a provider first",
+    addProvider: "Add provider",
+    addModel: "Add model",
+    removeProvider: "Remove provider",
+    removeModel: "Remove model",
+    providerHeading: "Provider",
+    providerId: "Provider id",
+    providerIdHint: "Lowercase key stored under models.providers (e.g. dashscope, deepseek).",
+    apiAdapter: "API adapter",
+    apiKey: "API key",
+    apiKeyPlaceholder: "Paste API key",
+    apiKeyUnchangedPlaceholder: "Unchanged (leave blank to keep saved key)",
+    apiKeyRedactedHint:
+      "A key is already saved. Leave blank to keep it, or paste a new key to replace.",
+    models: "Models",
+    modelId: "Model id",
+    modelName: "Display name",
   },
   overview: {
     access: {
@@ -565,6 +595,9 @@ export const ko: TranslationMap = {
     showCronSessions: "Cron 세션 표시",
     showCronSessionsHidden: "Cron 세션 표시({count}개 숨김)",
     onboardingDisabled: "설정 중에는 비활성화됨",
+    myModelsLabel: "Saved models (from Models settings)",
+    myModelsPlaceholder: "Saved models…",
+    myModelsEmpty: "No saved models — add them in Models",
   },
   languages: {
     en: "English",

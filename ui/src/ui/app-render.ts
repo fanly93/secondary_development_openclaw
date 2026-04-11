@@ -76,6 +76,15 @@ import {
   updateExecApprovalsFormValue,
 } from "./controllers/exec-approvals.ts";
 import { loadLogs } from "./controllers/logs.ts";
+import {
+  addModelToProvider,
+  createEmptyProviderDraft,
+  patchModelAt,
+  patchModelProviderAt,
+  reconcileDefaultRefAfterDraftChange,
+  removeModelFromProvider,
+  removeModelProviderAt,
+} from "./controllers/model-providers.ts";
 import { loadNodes } from "./controllers/nodes.ts";
 import { loadPresence } from "./controllers/presence.ts";
 import { deleteSessionsAndRefresh, loadSessions, patchSession } from "./controllers/sessions.ts";
@@ -114,6 +123,7 @@ import { renderConfig } from "./views/config.ts";
 import { renderExecApprovalPrompt } from "./views/exec-approval.ts";
 import { renderGatewayUrlConfirmation } from "./views/gateway-url-confirmation.ts";
 import { renderLoginGate } from "./views/login-gate.ts";
+import { renderModelProviders } from "./views/model-providers.ts";
 import { renderOverview } from "./views/overview.ts";
 
 // Lazy-loaded view modules – deferred so the initial bundle stays small.
@@ -1401,6 +1411,70 @@ export function renderApp(state: AppViewState) {
                 },
               }),
             )
+          : nothing}
+        ${state.tab === "modelProviders"
+          ? renderModelProviders({
+              connected: state.connected,
+              saving: state.modelProvidersSaving,
+              lastError: state.lastError,
+              modelProviders: state.modelProviders,
+              modelProvidersDefaultRef: state.modelProvidersDefaultRef,
+              onDefaultRefChange: (value) => {
+                state.modelProvidersDefaultRef = value;
+              },
+              onProviderPatch: (providerClientId, patch) => {
+                state.modelProviders = patchModelProviderAt(
+                  state.modelProviders,
+                  providerClientId,
+                  patch,
+                );
+                state.modelProvidersDefaultRef = reconcileDefaultRefAfterDraftChange({
+                  modelProviders: state.modelProviders,
+                  modelProvidersDefaultRef: state.modelProvidersDefaultRef,
+                });
+              },
+              onAddProvider: () => {
+                state.modelProviders = [...state.modelProviders, createEmptyProviderDraft()];
+              },
+              onRemoveProvider: (providerClientId) => {
+                state.modelProviders = removeModelProviderAt(
+                  state.modelProviders,
+                  providerClientId,
+                );
+                state.modelProvidersDefaultRef = reconcileDefaultRefAfterDraftChange({
+                  modelProviders: state.modelProviders,
+                  modelProvidersDefaultRef: state.modelProvidersDefaultRef,
+                });
+              },
+              onAddModel: (providerClientId) => {
+                state.modelProviders = addModelToProvider(state.modelProviders, providerClientId);
+              },
+              onRemoveModel: (providerClientId, modelClientId) => {
+                state.modelProviders = removeModelFromProvider(
+                  state.modelProviders,
+                  providerClientId,
+                  modelClientId,
+                );
+                state.modelProvidersDefaultRef = reconcileDefaultRefAfterDraftChange({
+                  modelProviders: state.modelProviders,
+                  modelProvidersDefaultRef: state.modelProvidersDefaultRef,
+                });
+              },
+              onModelPatch: (providerClientId, modelClientId, patch) => {
+                state.modelProviders = patchModelAt(
+                  state.modelProviders,
+                  providerClientId,
+                  modelClientId,
+                  patch,
+                );
+                state.modelProvidersDefaultRef = reconcileDefaultRefAfterDraftChange({
+                  modelProviders: state.modelProviders,
+                  modelProvidersDefaultRef: state.modelProvidersDefaultRef,
+                });
+              },
+              onSave: () => void state.saveModelProviders(),
+              onReload: () => void state.loadModelProviders(),
+            })
           : nothing}
         ${state.tab === "skills"
           ? lazyRender(lazySkills, (m) =>

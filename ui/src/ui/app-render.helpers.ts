@@ -5,10 +5,11 @@ import { refreshChat } from "./app-chat.ts";
 import { syncUrlWithSessionKey } from "./app-settings.ts";
 import type { AppViewState } from "./app-view-state.ts";
 import { OpenClawApp } from "./app.ts";
-import { createChatModelOverride } from "./chat-model-ref.ts";
+import { buildChatModelOption, createChatModelOverride } from "./chat-model-ref.ts";
 import {
   resolveChatModelOverrideValue,
   resolveChatModelSelectState,
+  resolveEffectiveChatModelRef,
 } from "./chat-model-select-state.ts";
 import { refreshVisibleToolsEffectiveForCurrentSession } from "./controllers/agents.ts";
 import { ChatState, loadChatHistory } from "./controllers/chat.ts";
@@ -23,7 +24,7 @@ import {
   normalizeThinkLevel,
   resolveThinkingDefaultForModel,
 } from "./thinking.ts";
-import type { SessionsListResult } from "./types.ts";
+import type { ModelCatalogEntry, SessionsListResult } from "./types.ts";
 
 type SessionDefaultsSnapshot = {
   mainSessionKey?: string;
@@ -139,6 +140,7 @@ export function renderChatSessionSelect(state: AppViewState) {
   const sessionGroups = resolveSessionOptionGroups(state, state.sessionKey, state.sessionsResult);
   const modelSelect = renderChatModelSelect(state);
   const thinkingSelect = renderChatThinkingSelect(state);
+  const myModelsSelect = renderChatMyModelsSelect(state);
   const selectedSessionLabel =
     sessionGroups.flatMap((group) => group.options).find((entry) => entry.key === state.sessionKey)
       ?.label ?? state.sessionKey;
@@ -172,7 +174,7 @@ export function renderChatSessionSelect(state: AppViewState) {
           )}
         </select>
       </label>
-      ${modelSelect} ${thinkingSelect}
+      ${modelSelect} ${thinkingSelect} ${myModelsSelect}
     </div>
   `;
 }
@@ -655,6 +657,60 @@ function resolveChatThinkingSelectState(state: AppViewState): ChatThinkingSelect
     defaultLabel: `Default (${defaultLevel})`,
     options: buildThinkingOptions(provider, model, currentOverride),
   };
+}
+
+function configuredSavedModelMatches(entry: ModelCatalogEntry, ref: string): boolean {
+  if (!ref.trim()) {
+    return false;
+  }
+  const v = buildChatModelOption(entry).value;
+  return v === ref || v.toLowerCase() === ref.toLowerCase();
+}
+
+function renderChatMyModelsSelect(state: AppViewState) {
+  const configured = state.chatConfiguredModelCatalog ?? [];
+  const busy =
+    state.chatLoading || state.chatSending || Boolean(state.chatRunId) || state.chatStream !== null;
+  const disabled = !state.connected || busy || configured.length === 0 || !state.client;
+  const effectiveRef = resolveEffectiveChatModelRef(state);
+  const selectedEntry = configured.find((e) => configuredSavedModelMatches(e, effectiveRef));
+  const selectValue = selectedEntry ? buildChatModelOption(selectedEntry).value : "";
+  const placeholder =
+    configured.length === 0 ? t("chat.myModelsEmpty") : t("chat.myModelsPlaceholder");
+  const selectedLabel =
+    selectValue === ""
+      ? placeholder
+      : selectedEntry
+        ? buildChatModelOption(selectedEntry).label
+        : selectValue;
+  return html`
+    <label class="field chat-controls__session chat-controls__my-models">
+      <select
+        data-chat-my-models-select="true"
+        aria-label=${t("chat.myModelsLabel")}
+        title=${selectedLabel}
+        ?disabled=${disabled}
+        @change=${async (e: Event) => {
+          const next = (e.target as HTMLSelectElement).value.trim();
+          if (next) {
+            await switchChatModel(state, next);
+          }
+        }}
+      >
+        <option value="" ?selected=${selectValue === ""}>${placeholder}</option>
+        ${repeat(
+          configured,
+          (entry) => buildChatModelOption(entry).value,
+          (entry) => {
+            const opt = buildChatModelOption(entry);
+            return html`<option value=${opt.value} ?selected=${opt.value === selectValue}>
+              ${opt.label}
+            </option>`;
+          },
+        )}
+      </select>
+    </label>
+  `;
 }
 
 function renderChatThinkingSelect(state: AppViewState) {

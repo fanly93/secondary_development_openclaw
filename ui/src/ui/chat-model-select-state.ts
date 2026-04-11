@@ -103,3 +103,12 @@ export function resolveChatModelSelectState(
     options: buildChatModelOptions(state.chatModelCatalog ?? [], currentOverride, defaultModel),
   };
 }
+
+/** Effective `provider/model` ref for the active session (override or gateway default). */
+export function resolveEffectiveChatModelRef(state: ChatModelSelectStateInput): string {
+  const currentOverride = resolveChatModelOverrideValue(state);
+  if (currentOverride.trim()) {
+    return currentOverride.trim();
+  }
+  return resolveDefaultModelValue(state).trim();
+}

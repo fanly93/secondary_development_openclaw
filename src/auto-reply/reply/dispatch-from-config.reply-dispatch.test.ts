@@ -400,7 +400,7 @@ describe("dispatchReplyFromConfig reply_dispatch hook", () => {
       ctx: createHookCtx(),
       cfg: emptyConfig,
       dispatcher: createDispatcher(),
-      fastAbortResolver: () => ({ handled: false, aborted: false }),
+      fastAbortResolver: async () => ({ handled: false, aborted: false }),
       formatAbortReplyTextResolver: () => "⚙️ Agent was aborted.",
       replyResolver: async () => ({ text: "model reply" }),
     });

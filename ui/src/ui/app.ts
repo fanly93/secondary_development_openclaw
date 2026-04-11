@@ -63,6 +63,11 @@ import type { DevicePairingList } from "./controllers/devices.ts";
 import type { DreamingStatus } from "./controllers/dreaming.ts";
 import type { ExecApprovalRequest } from "./controllers/exec-approval.ts";
 import type { ExecApprovalsFile, ExecApprovalsSnapshot } from "./controllers/exec-approvals.ts";
+import {
+  loadModelProvidersEditor as loadModelProvidersEditorInternal,
+  saveModelProvidersEditor as saveModelProvidersEditorInternal,
+  type ModelProviderDraft,
+} from "./controllers/model-providers.ts";
 import type {
   ClawHubSearchResult,
   ClawHubSkillDetail,
@@ -173,6 +178,7 @@ export class OpenClawApp extends LitElement {
   @state() chatModelOverrides: Record<string, ChatModelOverride | null> = {};
   @state() chatModelsLoading = false;
   @state() chatModelCatalog: ModelCatalogEntry[] = [];
+  @state() chatConfiguredModelCatalog: ModelCatalogEntry[] = [];
   @state() chatQueue: ChatQueueItem[] = [];
   @state() chatAttachments: ChatAttachment[] = [];
   @state() chatManualRefreshInFlight = false;
@@ -404,6 +410,10 @@ export class OpenClawApp extends LitElement {
   @state() cronRunsSortDir: import("./types.js").CronSortDir = "desc";
   @state() cronModelSuggestions: string[] = [];
   @state() cronBusy = false;
+
+  @state() modelProviders: ModelProviderDraft[] = [];
+  @state() modelProvidersDefaultRef = "";
+  @state() modelProvidersSaving = false;
 
   @state() updateAvailable: import("./types.js").UpdateAvailable | null = null;
 
@@ -637,6 +647,18 @@ export class OpenClawApp extends LitElement {
 
   async loadCron() {
     await loadCronInternal(this as unknown as Parameters<typeof loadCronInternal>[0]);
+  }
+
+  async loadModelProviders() {
+    await loadModelProvidersEditorInternal(
+      this as unknown as Parameters<typeof loadModelProvidersEditorInternal>[0],
+    );
+  }
+
+  async saveModelProviders() {
+    await saveModelProvidersEditorInternal(
+      this as unknown as Parameters<typeof saveModelProvidersEditorInternal>[0],
+    );
   }
 
   async handleAbortChat() {

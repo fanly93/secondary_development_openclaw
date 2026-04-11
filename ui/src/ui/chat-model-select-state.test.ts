@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   resolveChatModelOverrideValue,
   resolveChatModelSelectState,
+  resolveEffectiveChatModelRef,
 } from "./chat-model-select-state.ts";
 import {
   createModelCatalog,
@@ -54,5 +55,36 @@ describe("chat-model-select-state", () => {
     expect(resolved.currentOverride).toBe("openai/gpt-5-mini");
     expect(resolved.options.map((option) => option.value)).toContain("openai/gpt-5-mini");
     expect(resolved.options.map((option) => option.value)).not.toContain("gpt-5-mini");
+  });
+
+  it("resolveEffectiveChatModelRef prefers session model over gateway defaults", () => {
+    const state = {
+      sessionKey: "main",
+      chatModelOverrides: {},
+      chatModelCatalog: createModelCatalog(DEEPSEEK_CHAT_MODEL),
+      sessionsResult: createSessionsListResult({
+        model: "deepseek-chat",
+        modelProvider: "deepseek",
+        defaultsModel: "gpt-5",
+        defaultsProvider: "openai",
+      }),
+    };
+    expect(resolveEffectiveChatModelRef(state)).toBe("deepseek/deepseek-chat");
+  });
+
+  it("resolveEffectiveChatModelRef falls back to gateway default model", () => {
+    const state = {
+      sessionKey: "main",
+      chatModelOverrides: { main: null },
+      chatModelCatalog: createModelCatalog(...DEFAULT_CHAT_MODEL_CATALOG),
+      sessionsResult: createSessionsListResult({
+        omitSessionFromList: true,
+        model: null,
+        modelProvider: null,
+        defaultsModel: "gpt-5",
+        defaultsProvider: "openai",
+      }),
+    };
+    expect(resolveEffectiveChatModelRef(state)).toBe("openai/gpt-5");
   });
 });

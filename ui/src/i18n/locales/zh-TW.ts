@@ -153,6 +153,7 @@ export const zh_TW: TranslationMap = {
     sessions: "會話",
     usage: "使用情況",
     cron: "定時任務",
+    modelProviders: "Models",
     skills: "技能",
     nodes: "節點",
     chat: "聊天",
@@ -174,6 +175,7 @@ export const zh_TW: TranslationMap = {
     sessions: "活動會話和默認設置。",
     usage: "API 使用情況和成本。",
     cron: "喚醒和重複運行。",
+    modelProviders: "Custom providers and chat allowlist.",
     skills: "技能和 API 密鑰。",
     nodes: "配對設備和命令。",
     chat: "網關聊天，快速干預。",
@@ -186,6 +188,34 @@ export const zh_TW: TranslationMap = {
     debug: "快照、事件、RPC。",
     logs: "實時網關日誌。",
     dreams: "睡眠期間的記憶整合。",
+  },
+  modelProviders: {
+    title: "Model providers",
+    subtitle:
+      "Add OpenAI-compatible endpoints (DeepSeek, DashScope, GLM, Kimi, …). Saved to openclaw.json and used for the gateway model catalog.",
+    allowlistHint:
+      "Saving syncs agents.defaults.models so the Chat tab model picker lists only models you configure here (plus fallbacks). Leave all providers empty to show the full catalog again.",
+    docsLink: "Configuration docs",
+    defaultModel: "Default agent model",
+    defaultModelHint:
+      "Written to agents.defaults.model as provider/model. When qwen3.5-plus is present it is preferred automatically if no default is set.",
+    noModelsYet: "Add a model under a provider first",
+    addProvider: "Add provider",
+    addModel: "Add model",
+    removeProvider: "Remove provider",
+    removeModel: "Remove model",
+    providerHeading: "Provider",
+    providerId: "Provider id",
+    providerIdHint: "Lowercase key stored under models.providers (e.g. dashscope, deepseek).",
+    apiAdapter: "API adapter",
+    apiKey: "API key",
+    apiKeyPlaceholder: "Paste API key",
+    apiKeyUnchangedPlaceholder: "Unchanged (leave blank to keep saved key)",
+    apiKeyRedactedHint:
+      "A key is already saved. Leave blank to keep it, or paste a new key to replace.",
+    models: "Models",
+    modelId: "Model id",
+    modelName: "Display name",
   },
   overview: {
     access: {
@@ -561,6 +591,9 @@ export const zh_TW: TranslationMap = {
     showCronSessions: "顯示定時任務會話",
     showCronSessionsHidden: "顯示定時任務會話 (已隱藏 {count} 個)",
     onboardingDisabled: "引導期間禁用",
+    myModelsLabel: "Saved models (from Models settings)",
+    myModelsPlaceholder: "Saved models…",
+    myModelsEmpty: "No saved models — add them in Models",
   },
   languages: {
     en: "English",

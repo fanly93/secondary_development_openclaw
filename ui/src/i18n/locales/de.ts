@@ -153,6 +153,7 @@ export const de: TranslationMap = {
     sessions: "Sitzungen",
     usage: "Nutzung",
     cron: "Cron-Aufgaben",
+    modelProviders: "Models",
     skills: "Fähigkeiten",
     nodes: "Geräte",
     chat: "Chat",
@@ -174,6 +175,7 @@ export const de: TranslationMap = {
     sessions: "Aktive Sitzungen inspizieren und Standardeinstellungen pro Sitzung anpassen.",
     usage: "API-Nutzung und Kosten überwachen.",
     cron: "Aufweckzeiten und wiederkehrende Agent-Läufe planen.",
+    modelProviders: "Custom providers and chat allowlist.",
     skills: "Skill-Verfügbarkeit und API-Schlüsselinjektion verwalten.",
     nodes: "Gekoppelte Geräte, Fähigkeiten und Befehlsfreigabe.",
     chat: "Direkte Gateway-Chat-Sitzung für schnelle Eingriffe.",
@@ -186,6 +188,34 @@ export const de: TranslationMap = {
     debug: "Gateway-Snapshots, Ereignisse und manuelle RPC-Aufrufe.",
     logs: "Live-Verfolgung der Gateway-Protokolldateien.",
     dreams: "Speicherkonsolidierung im Schlaf.",
+  },
+  modelProviders: {
+    title: "Model providers",
+    subtitle:
+      "Add OpenAI-compatible endpoints (DeepSeek, DashScope, GLM, Kimi, …). Saved to openclaw.json and used for the gateway model catalog.",
+    allowlistHint:
+      "Saving syncs agents.defaults.models so the Chat tab model picker lists only models you configure here (plus fallbacks). Leave all providers empty to show the full catalog again.",
+    docsLink: "Configuration docs",
+    defaultModel: "Default agent model",
+    defaultModelHint:
+      "Written to agents.defaults.model as provider/model. When qwen3.5-plus is present it is preferred automatically if no default is set.",
+    noModelsYet: "Add a model under a provider first",
+    addProvider: "Add provider",
+    addModel: "Add model",
+    removeProvider: "Remove provider",
+    removeModel: "Remove model",
+    providerHeading: "Provider",
+    providerId: "Provider id",
+    providerIdHint: "Lowercase key stored under models.providers (e.g. dashscope, deepseek).",
+    apiAdapter: "API adapter",
+    apiKey: "API key",
+    apiKeyPlaceholder: "Paste API key",
+    apiKeyUnchangedPlaceholder: "Unchanged (leave blank to keep saved key)",
+    apiKeyRedactedHint:
+      "A key is already saved. Leave blank to keep it, or paste a new key to replace.",
+    models: "Models",
+    modelId: "Model id",
+    modelName: "Display name",
   },
   overview: {
     access: {
@@ -569,6 +599,9 @@ export const de: TranslationMap = {
     showCronSessions: "Cron-Sitzungen anzeigen",
     showCronSessionsHidden: "Cron-Sitzungen anzeigen ({count} ausgeblendet)",
     onboardingDisabled: "Während der Einrichtung deaktiviert",
+    myModelsLabel: "Saved models (from Models settings)",
+    myModelsPlaceholder: "Saved models…",
+    myModelsEmpty: "No saved models — add them in Models",
   },
   languages: {
     en: "Englisch",

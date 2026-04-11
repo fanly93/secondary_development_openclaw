@@ -63,6 +63,7 @@ function createChatHeaderState(
     modelProvider?: string | null;
     thinkingLevel?: string | null;
     models?: ModelCatalogEntry[];
+    savedModels?: ModelCatalogEntry[];
     omitSessionFromList?: boolean;
   } = {},
 ): { state: AppViewState; request: ReturnType<typeof vi.fn> } {
@@ -71,6 +72,7 @@ function createChatHeaderState(
   let currentThinkingLevel = overrides.thinkingLevel ?? null;
   const omitSessionFromList = overrides.omitSessionFromList ?? false;
   const catalog = overrides.models ?? createModelCatalog(...DEFAULT_CHAT_MODEL_CATALOG);
+  const savedModels = overrides.savedModels ?? [];
   const request = vi.fn(async (method: string, params: Record<string, unknown>) => {
     if (method === "sessions.patch") {
       const nextModel = (params.model as string | null | undefined) ?? null;
@@ -116,6 +118,9 @@ function createChatHeaderState(
     if (method === "models.list") {
       return { models: catalog };
     }
+    if (method === "models.listConfigured") {
+      return { models: savedModels };
+    }
     if (method === "tools.effective") {
       return {
         agentId: "main",
@@ -142,6 +147,7 @@ function createChatHeaderState(
     })(),
     chatModelOverrides: {},
     chatModelCatalog: catalog,
+    chatConfiguredModelCatalog: savedModels,
     chatModelsLoading: false,
     client: { request } as unknown as GatewayBrowserClient,
     settings: {

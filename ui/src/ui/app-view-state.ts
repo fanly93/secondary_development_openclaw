@@ -4,6 +4,7 @@ import type { CronModelSuggestionsState, CronState } from "./controllers/cron.ts
 import type { DevicePairingList } from "./controllers/devices.ts";
 import type { ExecApprovalRequest } from "./controllers/exec-approval.ts";
 import type { ExecApprovalsFile, ExecApprovalsSnapshot } from "./controllers/exec-approvals.ts";
+import type { ModelProviderDraft } from "./controllers/model-providers.ts";
 import type {
   ClawHubSearchResult,
   ClawHubSkillDetail,
@@ -79,6 +80,8 @@ export type AppViewState = {
   chatModelOverrides: Record<string, ChatModelOverride | null>;
   chatModelsLoading: boolean;
   chatModelCatalog: ModelCatalogEntry[];
+  /** Subset from `models.providers` (Models settings); for chat toolbar quick pick. */
+  chatConfiguredModelCatalog: ModelCatalogEntry[];
   chatQueue: ChatQueueItem[];
   chatManualRefreshInFlight: boolean;
   nodesLoading: boolean;
@@ -244,6 +247,9 @@ export type AppViewState = {
   usageLogFilterTools: string[];
   usageLogFilterHasTools: boolean;
   usageLogFilterQuery: string;
+  modelProviders: ModelProviderDraft[];
+  modelProvidersDefaultRef: string;
+  modelProvidersSaving: boolean;
 } & Pick<
   CronState,
   | "cronLoading"
@@ -345,6 +351,8 @@ export type AppViewState = {
     loadOverview: () => Promise<void>;
     loadAssistantIdentity: () => Promise<void>;
     loadCron: () => Promise<void>;
+    loadModelProviders: () => Promise<void>;
+    saveModelProviders: () => Promise<void>;
     handleWhatsAppStart: (force: boolean) => Promise<void>;
     handleWhatsAppWait: () => Promise<void>;
     handleWhatsAppLogout: () => Promise<void>;

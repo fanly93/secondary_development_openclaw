@@ -1,5 +1,5 @@
 import { DEFAULT_PROVIDER } from "../../agents/defaults.js";
-import { buildAllowedModelSet } from "../../agents/model-selection.js";
+import { buildAllowedModelSet, buildConfiguredModelCatalog } from "../../agents/model-selection.js";
 import { loadConfig } from "../../config/config.js";
 import {
   ErrorCodes,
@@ -31,6 +31,33 @@ export const modelsHandlers: GatewayRequestHandlers = {
         defaultProvider: DEFAULT_PROVIDER,
       });
       const models = allowedCatalog.length > 0 ? allowedCatalog : catalog;
+      respond(true, { models }, undefined);
+    } catch (err) {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, String(err)));
+    }
+  },
+  "models.listConfigured": async ({ params, respond }) => {
+    if (!validateModelsListParams(params)) {
+      respond(
+        false,
+        undefined,
+        errorShape(
+          ErrorCodes.INVALID_REQUEST,
+          `invalid models.listConfigured params: ${formatValidationErrors(validateModelsListParams.errors)}`,
+        ),
+      );
+      return;
+    }
+    try {
+      const cfg = loadConfig();
+      const models = buildConfiguredModelCatalog({ cfg });
+      models.sort((a, b) => {
+        const pa = a.provider.localeCompare(b.provider);
+        if (pa !== 0) {
+          return pa;
+        }
+        return a.id.localeCompare(b.id);
+      });
       respond(true, { models }, undefined);
     } catch (err) {
       respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, String(err)));

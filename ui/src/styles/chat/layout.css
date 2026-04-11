@@ -769,6 +769,15 @@
   max-width: 118px;
 }
 
+.chat-controls__my-models {
+  min-width: 124px;
+  max-width: 206px;
+}
+
+.chat-controls__my-models select {
+  max-width: 206px;
+}
+
 .chat-controls__thinking {
   display: flex;
   align-items: center;

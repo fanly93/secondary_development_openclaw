@@ -20,6 +20,7 @@ import { loadDevices } from "./controllers/devices.ts";
 import { loadDreamDiary, loadDreamingStatus } from "./controllers/dreaming.ts";
 import { loadExecApprovals } from "./controllers/exec-approvals.ts";
 import { loadLogs } from "./controllers/logs.ts";
+import { loadModelProvidersEditor } from "./controllers/model-providers.ts";
 import { loadNodes } from "./controllers/nodes.ts";
 import { loadPresence } from "./controllers/presence.ts";
 import { loadSessions } from "./controllers/sessions.ts";
@@ -241,6 +242,12 @@ export async function refreshActiveTab(host: SettingsHost) {
   }
   if (host.tab === "cron") {
     await loadCron(host);
+  }
+  if (host.tab === "modelProviders") {
+    await loadConfigSchema(host as unknown as OpenClawApp);
+    await loadModelProvidersEditor(
+      host as unknown as Parameters<typeof loadModelProvidersEditor>[0],
+    );
   }
   if (host.tab === "skills") {
     await loadSkills(host as unknown as OpenClawApp);

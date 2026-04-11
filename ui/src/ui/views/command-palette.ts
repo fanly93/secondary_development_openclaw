@@ -45,6 +45,13 @@ const PALETTE_ITEMS: PaletteItem[] = [
     category: "navigation",
     action: "nav:cron",
   },
+  {
+    id: "nav-models",
+    label: "Models",
+    icon: "plug",
+    category: "navigation",
+    action: "nav:modelProviders",
+  },
   { id: "nav-skills", label: "Skills", icon: "zap", category: "navigation", action: "nav:skills" },
   {
     id: "nav-config",

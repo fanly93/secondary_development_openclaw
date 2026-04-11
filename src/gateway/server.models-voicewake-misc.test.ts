@@ -367,6 +367,53 @@ describe("gateway server models + voicewake", () => {
     expect(res.ok).toBe(false);
     expect(res.error?.message ?? "").toMatch(/invalid models\.list params/i);
   });
+
+  test("models.listConfigured returns models from models.providers only", async () => {
+    await withModelsConfig(
+      {
+        models: {
+          providers: {
+            openai: {
+              models: [
+                { id: "gpt-4", name: "GPT-4" },
+                { id: "gpt-5", name: "GPT-5" },
+              ],
+            },
+            deepseek: {
+              models: [{ id: "deepseek-chat", name: "DeepSeek Chat" }],
+            },
+          },
+        },
+      },
+      async () => {
+        const res = await rpcReq<{ models: ModelCatalogRpcEntry[] }>(ws, "models.listConfigured");
+        expect(res.ok).toBe(true);
+        expect(res.payload?.models).toEqual([
+          {
+            id: "deepseek-chat",
+            name: "DeepSeek Chat",
+            provider: "deepseek",
+          },
+          {
+            id: "gpt-4",
+            name: "GPT-4",
+            provider: "openai",
+          },
+          {
+            id: "gpt-5",
+            name: "GPT-5",
+            provider: "openai",
+          },
+        ]);
+      },
+    );
+  });
+
+  test("models.listConfigured rejects unknown params", async () => {
+    const res = await rpcReq(ws, "models.listConfigured", { extra: true });
+    expect(res.ok).toBe(false);
+    expect(res.error?.message ?? "").toMatch(/invalid models\.listConfigured params/i);
+  });
 });
 
 describe("gateway server misc", () => {
