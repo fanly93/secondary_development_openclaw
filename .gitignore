@@ -15,6 +15,10 @@ __pycache__/
 .tsbuildinfo
 .pnpm-store
 .worktrees/
+
+# Cursor IDE (local rules and workspace metadata)
+.cursor/
+
 .DS_Store
 **/.DS_Store
 ui/src/ui/__screenshots__/
