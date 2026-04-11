@@ -10,7 +10,7 @@
 4. 记忆系统（memory）设计与接入
 5. 会话系统（session）设计与接入
 
-同时补充当前架构中“容易被忽略但非常关键”的运行时模块，形成可用于二开评审的完整技术视图。
+同时补充当前架构中“容易被忽略但非常关键”的运行时模块，形成可用于二开评审的完整技术视图。其中 **自定义 Skill（含插件捆绑）** 的落地规范集中在 **§6.5**，可与 Phase3 Channel 规范配合使用。
 
 ---
 
@@ -207,6 +207,8 @@ OpenClaw 的 Agent 不是单体“模型调用器”，而是一个分层运行�
 - 支持技能过滤、可见性控制、prompt budget 截断与 compact 格式降级
 - 通过 snapshot version 避免每轮全量重建
 
+**自定义 Skill 的完整二开规范**（目录、manifest、dist-runtime、配置与验收）见 **§6.5**（位于 MCP 小结之后）。
+
 ## 6.4 MCP 接入机制
 
 ### 运行时管理
@@ -226,6 +228,76 @@ OpenClaw 的 Agent 不是单体“模型调用器”，而是一个分层运行�
 
 - 配置合并：`src/agents/embedded-pi-mcp.ts::loadEmbeddedPiMcpConfig(...)`
 - 传输适配：`src/agents/mcp-transport.ts`（`stdio` / `sse` / `streamable-http`）
+
+## 6.5 自定义 Skill 开发规范（二开指导）
+
+本节总结在 OpenClaw 中**自行实现并交付** Skill（尤其随 **bundled 工作区插件** 发布的 Skill）时必须遵守的契约与常见踩坑，便于后续新增 Skill 时直接照做。
+
+### 6.5.1 适用范围
+
+| 类型                           | 说明                                                                                                        |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| 工作区 Skill                   | 位于 `<agentWorkspace>/skills/<name>/` 或 `<workspace>/.agents/skills/` 等，由用户或同步脚本维护            |
+| ClawHub 安装 Skill             | 通过 `openclaw skills install` 等进入 managed/workspace 目录，不依赖插件 manifest                           |
+| **插件捆绑 Skill（本节重点）** | 位于 `extensions/<plugin-id>/skills/<skill-key>/`，由插件根目录 `openclaw.plugin.json` 的 `skills` 字段声明 |
+
+Skill 与 **Channel 入站/出站**（Phase3）正交：同一 Skill 可被多通道使用；插件只是将 Channel 实现与可选 Skill 包放在同一仓库中发布。
+
+### 6.5.2 目录结构与 manifest
+
+1. **单包目录**：每个 Skill 一个子目录，根文件必须为 **`SKILL.md`**（可含 frontmatter）。
+2. **推荐布局**：`extensions/<plugin-id>/skills/<skill-key>/SKILL.md`，可选 `scripts/`、`assets/` 等；脚本路径在 `SKILL.md` 正文中写相对说明（模型执行时以 skill 目录为基准解析）。
+3. **插件清单**：在 `extensions/<plugin-id>/openclaw.plugin.json` 中声明技能根，例如：
+   - `"skills": ["./skills"]`
+   - 路径相对于**插件根目录**；可指向多个根目录（数组多项）。
+4. **Frontmatter**：至少包含 `name`（全局合并时的技能键，与目录名建议一致）、`description`。可选使用 OpenClaw 约定的元数据声明依赖（如 `requires.bins`、`requires.env`、`primaryEnv`），以便 `openclaw skills check` 与 Control UI 展示「缺依赖 / 就绪」状态。公共语义见仓库内 `docs/tools/skills-config.md` 与官方文档 [Skills](https://docs.openclaw.ai/tools/skills)。
+
+### 6.5.3 发现、合并与源码落点
+
+- **统一入口**：`loadWorkspaceSkillEntries(...)` → 内部 `loadSkillEntries(...)`（`src/agents/skills/workspace.ts`）。
+- **插件技能根**：`resolvePluginSkillDirs({ workspaceDir, config })`（`src/agents/skills/plugin-skills.ts`）根据 `loadPluginManifestRegistry` 扫描已激活插件的 `skills` 路径，将目录并入 `skills.load.extraDirs` 同类逻辑（来源标记为 **`openclaw-extra`**）。
+- **合并与覆盖**：多来源技能按固定顺序合并到 `Map<skill.name, Skill>`，**同名后者覆盖前者**；需避免与内置或其它插件 **技能名冲突**。
+- **快照与注入**：`buildWorkspaceSkillSnapshot(...)`、`resolveSkillsPromptForRun(...)`、`ensureSkillsWatcher(...)`（同目录 `workspace.ts`、`refresh.ts`）；会话侧刷新见 `src/auto-reply/reply/session-updates.ts`。
+
+### 6.5.4 插件激活与「为何列表里没有」
+
+插件自带目录只有在其 **运行时判定为已激活** 时才会参与 `resolvePluginSkillDirs`：
+
+- **Agent workspace**：`workspaceDir` 来自 `resolveAgentWorkspaceDir(config, agentId)`（`src/agents/agent-scope.ts`）；若为空则**不会**附加任何插件 skill 根（早期常见问题）。
+- **激活策略**：`resolveEffectivePluginActivationState` / `resolvePluginActivationState`（`src/plugins/config-policy.ts`，供 skill 扫描使用）须与 `config-state` 语义一致：例如配置了 **`plugins.allow`** 时，**已通过 channel / entries 显式启用的 bundled 插件**不得被 allow 列表误拦截，否则插件未激活 → 整包 `./skills` 不出现。
+- **Memory 槽位等**：仅影响带 `memory` kind 的插件；普通 channel 插件一般不受影响（`src/plugins/config-policy.ts` 中 `resolveMemorySlotDecision`）。
+
+### 6.5.5 dist、dist-runtime 与路径预期（本地开发必读）
+
+源码检出下，bundled 插件根常解析为 **`dist-runtime/extensions/<plugin-id>`**（当存在成对的 `dist/extensions` 与 staging 结果时），见 `src/plugins/bundled-dir.ts`。
+
+- **Staging 规则**：`scripts/stage-bundled-plugin-runtime.mjs` 将 `dist/extensions/<plugin>` 镜像到 `dist-runtime/extensions/<plugin>`。其中 **`skills/` 树下的文件必须以物理拷贝形式存在**，不得依赖指向 `dist/extensions/...` 的符号链接作为最终交付物；否则 `loadSkills` 内对 `realpath` 的**包含关系校验**会认为路径逃出配置的 skill 根，日志出现 `Skipping skill path that resolves outside its configured root.`，该插件下所有 pack skill 被静默丢弃（飞书 / Web UI 均看不到）。
+- **开发闭环**：编辑 `extensions/<plugin>/skills/...` → 执行 **`pnpm build`**（或 `watch-node.mjs gateway` 触发的完整构建链，确保重新 stage）→ **重启 gateway**，再在 Control UI 或 `openclaw skills check` 验证。
+- **运行时路径**：模型或工具日志中出现 **`.../dist-runtime/extensions/<plugin>/skills/<skill-key>/scripts/...`** 属于本地开发下的**预期现象**；发布安装形态下前缀会随安装目录变化，语义不变。
+
+### 6.5.6 Agent 技能白名单（prompt 可见性）
+
+若配置中设置了 **`agents.defaults.skills`** 或 **`agents.list[].skills`**（最终白名单语义），则仅列表中的 `name` 会进入面向模型的技能提示；**未列入则即使用插件已扫描到也会在 prompt 层被滤掉**。未配置该字段则默认不限制。详见 `docs/tools/skills-config.md` 与 schema 说明。
+
+### 6.5.7 密钥、进程环境与技能脚本
+
+- Skill 内脚本通常直接读取 **`process.env`**（如 Tavily 的 `TAVILY_API_KEY`）。
+- 变量必须对 **gateway / agent 宿主进程** 可见：可通过 `openclaw.json` 顶层 **`env`**、`~/.openclaw/.env`、仓库 `.env`（开发）、或系统环境注入；优先级以运行时加载顺序为准（参见仓库 `.env.example` 注释）。
+- 可选 per-skill 覆盖：`skills.entries.<skillKey>.env` / `apiKey`（见官方 Skills 配置文档）。
+
+### 6.5.8 验收清单（建议发布前自测）
+
+- [ ] `SKILL.md` 存在且 `name` 唯一；manifest 中 `skills` 路径存在且可读。
+- [ ] 插件在目标环境中为 **activated**（channel enabled / entries / 不与 `plugins.allow` 冲突）。
+- [ ] `pnpm build`（或 CI 等价物）后 **`dist-runtime/.../skills/<skill-key>/`** 下关键文件为**实文件**而非指向 `dist/` 外链的 symlink（必要时检查 `SKILL.md`、入口脚本）。
+- [ ] `openclaw skills check` 或 Control UI **Skills** 页能列出该技能；若声明了 env/bin，确认「缺依赖」状态符合预期。
+- [ ] 若使用技能白名单，已将 **`name`** 写入 `agents.defaults.skills` 或对应 `agents.list[].skills`。
+- [ ] 飞书 / 其它通道：**新会话或触发 skills 快照刷新** 后再测，避免沿用旧 `<available_skills>`。
+
+### 6.5.9 架构边界与禁止事项
+
+- Skill 说明与脚本：**不得**依赖未公开的 core 深路径 `src/**` 作为稳定契约；插件生产代码应通过 `openclaw/plugin-sdk/*` 与 manifest 表达扩展（与仓库 `AGENTS.md` 插件边界一致）。
+- 避免与内置 bundled skill **同名**；保持 `SKILL.md` 体积与扫描上限在默认限制内（见 `resolveSkillsLimits`）。
 
 ---
 
@@ -400,7 +472,7 @@ ContextEngine 将 `bootstrap / maintain / ingest / assemble / compact / afterTur
 ## 10.3 若你要扩展 tools/skills/mcp
 
 - tools：优先 `resolvePluginTools(...)` 与策略管线，不要绕过 `createOpenClawCodingTools(...)`
-- skills：遵守 snapshot/version 机制，避免每轮全量扫描
+- skills：遵守 snapshot/version 机制，避免每轮全量扫描；**新增或插件捆绑 Skill 时按 §6.5 规范**（manifest、`dist-runtime` 物化、激活与白名单、验收）。
 - mcp：复用 session runtime manager，不要每轮新建连接
 
 ## 10.4 若你要改 memory
@@ -438,7 +510,9 @@ ContextEngine 将 `bootstrap / maintain / ingest / assemble / compact / afterTur
 - `src/agents/pi-tools.ts`
 - `src/agents/openclaw-tools.ts`
 - `src/agents/skills/workspace.ts`
+- `src/agents/skills/plugin-skills.ts`
 - `src/agents/skills/refresh.ts`
+- `scripts/stage-bundled-plugin-runtime.mjs`（bundled 插件 `dist-runtime` 镜像；`skills/` 物化策略）
 - `src/agents/pi-bundle-mcp-runtime.ts`
 - `src/agents/pi-bundle-mcp-materialize.ts`
 - `src/agents/embedded-pi-mcp.ts`

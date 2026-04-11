@@ -68,7 +68,13 @@ function writeRuntimeModuleWrapper(sourcePath, targetPath) {
   );
 }
 
-function stagePluginRuntimeOverlay(sourceDir, targetDir) {
+function isUnderBundledPluginSkillsDir(pluginRoot, sourcePath) {
+  const rel = path.relative(pluginRoot, sourcePath).replace(/\\/g, "/");
+  return rel === "skills" || rel.startsWith("skills/");
+}
+
+function stagePluginRuntimeOverlay(sourceDir, targetDir, options = {}) {
+  const pluginRoot = options.pluginRoot ?? sourceDir;
   fs.mkdirSync(targetDir, { recursive: true });
 
   for (const dirent of fs.readdirSync(sourceDir, { withFileTypes: true })) {
@@ -80,16 +86,31 @@ function stagePluginRuntimeOverlay(sourceDir, targetDir) {
     const targetPath = path.join(targetDir, dirent.name);
 
     if (dirent.isDirectory()) {
-      stagePluginRuntimeOverlay(sourcePath, targetPath);
+      stagePluginRuntimeOverlay(sourcePath, targetPath, { pluginRoot });
       continue;
     }
 
     if (dirent.isSymbolicLink()) {
+      // Skill packs under ./skills must not be symlinked to dist/ peers: skill discovery
+      // uses realpath containment checks against the skills root, and broken symlinks
+      // would drop the entire skill from the catalog.
+      if (isUnderBundledPluginSkillsDir(pluginRoot, sourcePath)) {
+        const realSource = fs.realpathSync.native?.(sourcePath) ?? fs.realpathSync(sourcePath);
+        fs.copyFileSync(realSource, targetPath);
+        continue;
+      }
       ensureSymlink(fs.readlinkSync(sourcePath), targetPath);
       continue;
     }
 
     if (!dirent.isFile()) {
+      continue;
+    }
+
+    if (isUnderBundledPluginSkillsDir(pluginRoot, sourcePath)) {
+      // Always materialize skill pack bytes in dist-runtime (no import wrappers): agents
+      // execute scripts from this tree and path containment uses realpath.
+      fs.copyFileSync(sourcePath, targetPath);
       continue;
     }
 
@@ -139,7 +160,7 @@ export function stageBundledPluginRuntime(params = {}) {
     const runtimePluginDir = path.join(runtimeExtensionsRoot, dirent.name);
     const distPluginNodeModulesDir = path.join(distPluginDir, "node_modules");
 
-    stagePluginRuntimeOverlay(distPluginDir, runtimePluginDir);
+    stagePluginRuntimeOverlay(distPluginDir, runtimePluginDir, { pluginRoot: distPluginDir });
     linkPluginNodeModules({
       runtimePluginDir,
       sourcePluginNodeModulesDir: distPluginNodeModulesDir,

@@ -398,13 +398,13 @@ describe("stageBundledPluginRuntime", () => {
     createDistPluginDir(repoRoot, "feishu");
     setupRepoFiles(repoRoot, {
       [bundledDistPluginFile("feishu", "index.js")]: "export default {}\n",
-      [bundledDistPluginFile("feishu", "skills/feishu-doc/SKILL.md")]: "# Feishu Doc\n",
+      [bundledDistPluginFile("feishu", "assets/note.txt")]: "note\n",
     });
 
     const realSymlinkSync = fs.symlinkSync.bind(fs);
     const symlinkSpy = vi.spyOn(fs, "symlinkSync").mockImplementation(((target, link, type) => {
       const linkPath = String(link);
-      if (linkPath.endsWith(path.join("skills", "feishu-doc", "SKILL.md"))) {
+      if (linkPath.endsWith(path.join("assets", "note.txt"))) {
         const err = Object.assign(new Error("file already exists"), { code: "EEXIST" });
         realSymlinkSync(String(target), linkPath, type);
         throw err;
@@ -414,18 +414,66 @@ describe("stageBundledPluginRuntime", () => {
 
     expect(() => stageBundledPluginRuntime({ repoRoot })).not.toThrow();
 
-    const runtimeSkillPath = path.join(
+    const runtimeAssetPath = path.join(
       repoRoot,
       "dist-runtime",
       "extensions",
       "feishu",
-      "skills",
-      "feishu-doc",
-      "SKILL.md",
+      "assets",
+      "note.txt",
     );
-    expect(fs.lstatSync(runtimeSkillPath).isSymbolicLink()).toBe(true);
-    expect(fs.readFileSync(runtimeSkillPath, "utf8")).toBe("# Feishu Doc\n");
+    expect(fs.lstatSync(runtimeAssetPath).isSymbolicLink()).toBe(true);
+    expect(fs.readFileSync(runtimeAssetPath, "utf8")).toBe("note\n");
 
     symlinkSpy.mockRestore();
+  });
+
+  it("materializes plugin skill packs as real files under dist-runtime (not symlinks)", () => {
+    const repoRoot = makeRepoRoot("openclaw-stage-skill-copy-");
+    createDistPluginDir(repoRoot, "demo-skill");
+    setupRepoFiles(repoRoot, {
+      [bundledDistPluginFile("demo-skill", "index.js")]: "export default {}\n",
+      [bundledDistPluginFile("demo-skill", "skills/my-skill/SKILL.md")]: "name: my-skill\n",
+    });
+
+    stageBundledPluginRuntime({ repoRoot });
+
+    const skillMd = path.join(
+      repoRoot,
+      "dist-runtime",
+      "extensions",
+      "demo-skill",
+      "skills",
+      "my-skill",
+      "SKILL.md",
+    );
+    expect(fs.existsSync(skillMd)).toBe(true);
+    expect(fs.lstatSync(skillMd).isSymbolicLink()).toBe(false);
+    expect(fs.readFileSync(skillMd, "utf8")).toContain("my-skill");
+  });
+
+  it("resolves symlinked skill docs under skills/ into real files in dist-runtime", () => {
+    const repoRoot = makeRepoRoot("openclaw-stage-skill-symlink-");
+    const distPluginDir = createDistPluginDir(repoRoot, "demo-symlink");
+    const externalMd = path.join(repoRoot, "external-skill-doc.md");
+    fs.writeFileSync(externalMd, "external-body\n", "utf8");
+    fs.mkdirSync(path.join(distPluginDir, "skills", "pack"), { recursive: true });
+    const skillMd = path.join(distPluginDir, "skills", "pack", "SKILL.md");
+    fs.symlinkSync(path.relative(path.dirname(skillMd), externalMd), skillMd);
+    fs.writeFileSync(path.join(distPluginDir, "index.js"), "export {}\n", "utf8");
+
+    stageBundledPluginRuntime({ repoRoot });
+
+    const staged = path.join(
+      repoRoot,
+      "dist-runtime",
+      "extensions",
+      "demo-symlink",
+      "skills",
+      "pack",
+      "SKILL.md",
+    );
+    expect(fs.lstatSync(staged).isSymbolicLink()).toBe(false);
+    expect(fs.readFileSync(staged, "utf8")).toBe("external-body\n");
   });
 });

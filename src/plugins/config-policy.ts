@@ -245,7 +245,14 @@ export function resolvePluginActivationState(params: {
       reason: "selected memory slot",
     };
   }
-  if (params.config.allow.length > 0 && !explicitlyAllowed) {
+  // Must run after resolveExplicitPluginSelection: bundled channel enablement,
+  // plugins.entries.<id>.enabled, etc. count as explicit selection and must not
+  // be vetoed by plugins.allow (matches config-state.ts ordering).
+  if (
+    params.config.allow.length > 0 &&
+    !explicitlyAllowed &&
+    !explicitSelection.explicitlyEnabled
+  ) {
     return {
       enabled: false,
       activated: false,
